@@ -35,7 +35,7 @@ class Tank(pygame.sprite.Sprite):
         self.x, self.y = self.rect.x, self.rect.y = x, y
         # 英雄坦克最大挂载子弹数量
         self.player_missile_max_number = 5
-        self.enemy_missile_max_number = 0 #+ self.tg.difficult
+        self.enemy_missile_max_number = 1 + self.tg.difficult // 2
         self.interval = 0
     # 重写精灵更新方法
     def update(self, key, event=None):
@@ -56,6 +56,7 @@ class Tank(pygame.sprite.Sprite):
                 self.dir = self.dirs[4]
         # 如果坦克为英雄1号
         if self.type is 1 and self.tg.joyin == False:
+            #self.is_super = True
             if event is not None and event.key == K_j or self.tg.attack == 1:
                 # 按j键发射子弹
                 self.fire()
@@ -122,7 +123,7 @@ class Tank(pygame.sprite.Sprite):
                 # 随机生成前进步数
                 self.step = random.randint(6, 20)
                 # 随机生成前进方向
-                self.dir = self.dirs[random.choice([0,0,0,1,1,1,1,1,2,2,2,3,3,3,4,])]
+                self.dir = self.dirs[random.choice([0,0,0,1,1,1,1,1,1,1,2,2,2,3,3,3,4,])]
             if random.randrange(40) > 38 - self.tg.difficult //2:
                 self.fire()
         if self.type is 0:
@@ -162,7 +163,7 @@ class Tank(pygame.sprite.Sprite):
                 if self.tg.is_mixer:
                     self.tg.music.fire.play()
         else:
-            if self.enemy_missile_max_number > 0:
+            if self.enemy_missile_max_number > 0 and random.randint(1,2) == 2:
                 self.tg.missiles.add(Missile(self,self.tg))
                 self.tg.booms.add(Boom(self.tg.images.fire, 'fire', self, self.tg))
                 self.enemy_missile_max_number -= 1
@@ -198,13 +199,11 @@ class Tank(pygame.sprite.Sprite):
                 if self.type is 1 and self.tg.player1_num > 0 or self.type is 2 and self.tg.player2_num > 0:
                     # 英雄1号或2号剩余坦克大于0，重置坦克位置
                     self.reset_pos()
-                else:
-                    # 否则移除坦克，并设置正在游戏中的英雄数量-1
-                    self.tg.tanks.remove(self)
-                    self.tg.player_num -= 1
+
         else:
             # 如果是敌方坦克，直接移除，并减小敌方剩余坦克数量，主类中会根据坦克剩余量和运行中坦克生成新坦克
             self.tg.tanks.remove(self)
+            self.tg.kill += 1
             # self.tg.enemy_num -= 1
             if self.tg.is_mixer:
                 # 播放音效
@@ -216,9 +215,13 @@ class Tank(pygame.sprite.Sprite):
         if self.type is 1:
             self.rect.x, self.rect.y = 400, 600
             self.tg.player1_num -= 1
+            if self.tg.player1_num == 0:
+                self.tg.tanks.remove(self)
         elif self.type is 2:
             self.rect.x, self.rect.y = 520, 600
             self.tg.player2_num -= 1
+            if self.tg.player2_num == 0:
+                self.tg.tanks.remove(self)
 
     # 坦克碰撞墙
     def collide_wall(self):

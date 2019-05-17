@@ -1,7 +1,7 @@
 import pygame
 import random
 from boom import Boom
-from tank import Superone
+from tank import Superone,Tank
 from map import Wall
 
 class Reward(pygame.sprite.Sprite):
@@ -13,7 +13,7 @@ class Reward(pygame.sprite.Sprite):
         self.image = self.images[self.type]
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = random.randrange(self.tg.width - 40), random.randrange(self.tg.height - 40)
-        self.live = 1000
+        self.live = 500
 
     def update(self):
         if self.live < 0:
@@ -37,9 +37,9 @@ class Reward(pygame.sprite.Sprite):
                 if self.type is 0:
                     self.life_add(tank)
                 elif self.type is 1:
-                    self.box()
+                    self.get_box()
                 elif self.type is 2:
-                    self.boomall()
+                    self.boom_all()
                 elif self.type is 3:
                     self.get_super(tank)
                 self.tg.rewards.remove(self)
@@ -50,11 +50,11 @@ class Reward(pygame.sprite.Sprite):
         if tank.type is 2 and self.tg.player2_num < 5:
             self.tg.player2_num += 1
 
-    def box(self):
+    def get_box(self):
         for w in self.tg.home:
             self.tg.walls.add(Wall(self.tg, w))
 
-    def boomall(self):
+    def boom_all(self):
         for tank in self.tg.tanks:
             if tank.type is 0:
                 self.tg.booms.add(Boom(self.tg.images.boom, 'tank', tank, self.tg))
@@ -64,3 +64,4 @@ class Reward(pygame.sprite.Sprite):
         if not tank.is_super:
             tank.is_super = True
             self.tg.rewards.add(Superone(tank, self.tg))
+

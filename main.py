@@ -5,7 +5,7 @@ import pygame
 from pygame.locals import *
 
 from map import Map,Select,Wall
-from menu import Menu,Checkpoint
+from menu import Menu,Checkpoint,Choose_player_num
 from resource import Img, Music
 from reward import Reward
 from tank import Tank
@@ -42,6 +42,8 @@ class TankGame(object):
         self.enemy, self.player1, self.player2 = 0, 1, 2
         #定义玩家坦克的生命值
         self.player1_num, self.player2_num = 5, 5
+        #重置玩家人数
+        self.player_num = 0
         #定义两个计数器用于手柄
         self.dx, self.dy= 0, 0
         self.attack = 0
@@ -49,8 +51,9 @@ class TankGame(object):
         self.joystick = Joystick(self)
         self.joyin = False
         #设置一些变量和开关
+        self.kill = 1
         #难度
-        self.difficult = 1
+        self.difficult = 0
         #关卡
         self.checkpoint = 0
         #编辑地图关卡
@@ -69,10 +72,13 @@ class TankGame(object):
         self.is_edit_map = False
         self.is_win = False
         self.is_show_win = True
+        #设置一个变量接收选择游戏人数按钮的类型
+        self.choose_player_num = 0
+        self.is_show_choose_player_num = False
         #计时器
         self.step = 4000
         #道具计时器
-        self.step_reward = 6000
+        self.step_reward = 500
         #实例化帧
         self.clock = pygame.time.Clock()
         self.load_map()
@@ -83,7 +89,6 @@ class TankGame(object):
     def init(self):
         self.init_args()
         self.init_wall()
-        self.init_tank()
         self.init_menu()
         self.running()
         self.init_joystick()
@@ -99,11 +104,9 @@ class TankGame(object):
         #设置敌方坦克在场数
         self.enemy_show_num = 3 + self.difficult + ((self.checkpoint // 2) + 1)
         #设置坦克运动速度
-        self.enemy_tank_speed = round(2 + (self.difficult + (self.checkpoint // 2) + 10) / 10)
-        self.player_tank_speed = 8
+        self.enemy_tank_speed = round(0 + (self.difficult + (self.checkpoint // 2) + 10) / 10)
+        self.player_tank_speed = 5 + self.difficult // 2
         
-        self.player_num = 2
-
         self.missiles = pygame.sprite.Group() #子弹图层
         self.tanks = pygame.sprite.Group() 
         self.booms = pygame.sprite.Group()
@@ -113,6 +116,8 @@ class TankGame(object):
         self.checkpoints = pygame.sprite.Group()
         self.rewards = pygame.sprite.Group()
         self.joystick = pygame.sprite.Group()
+        #数组接收两个界面的类型
+        self.player_nums = pygame.sprite.Group()
 
 
     def load_map(self):
@@ -136,9 +141,18 @@ class TankGame(object):
         for item in self.map_data[self.edit_checkpoint].get('data'):
             self.maps.add(Wall(self, item))
 
-    def init_tank(self):
-        self.tanks.add(Tank(400,600,self.player1,self))
-        self.tanks.add(Tank(520,600,self.player2,self))
+    def creat_player_tank(self):
+        # 初始化我方英雄坦克
+        if self.player_num == 1:
+            if self.player1_num > 1:
+                self.tanks.add(Tank(400, 600, self.player1, self))
+            #self.tanks.add(Tank(520, 600, self.player2, self))
+        elif self.player_num == 2:
+            if self.player1_num > 1:
+                self.tanks.add(Tank(400, 600, self.player1, self))
+            if self.player2_num > 1:
+                self.tanks.add(Tank(520, 600, self.player2, self))
+        self.player_num = 0
 
     def init_menu(self):
         for i in range(4):
@@ -149,6 +163,9 @@ class TankGame(object):
         pos = (610, 335), (709, 335), (610,378), (709, 378), (610, 421), (709, 421)
         for index, item in enumerate(pos):
             self.checkpoints.add(Checkpoint(index, item[0], item[1], self))
+        #显示选择人数界面的位置
+        self.player_nums.add(Choose_player_num(0, 610, 224, self))
+        self.player_nums.add(Choose_player_num(1, 610, 267, self))
 
     def create_enemy_tank(self):
         if self.enemy_num > 0 and len(self.tanks) < self.enemy_show_num + 2:
@@ -205,6 +222,11 @@ class TankGame(object):
         self.checkpoints.update(event)
         self.checkpoints.draw(self.screen)
 
+    def show_choose_player_num(self,event):
+        self.screen.blit(self.images.player_num_background,(600, 216))
+        self.player_nums.draw(self.screen)
+        self.player_nums.update(event)
+
     def over(self):
         if self.is_mixer:
             self.music.over.play()
@@ -217,19 +239,22 @@ class TankGame(object):
 
     def win(self):
         if self.is_show_win:
+            # 判断is_show_win控制播放音效和停止背景音乐
             pygame.mixer.music.stop()
             self.is_show_win = False
             if self.is_mixer:
                 self.music.win.play()
-        elif self.step < 1500:
-            self.screen.blit(self.images.checkpoint[self.checkpoint][0],(430,237))
-            self.step -= 10
-
-        elif self.step < 10:
+        if self.step < 10:
+            # 通过判断不断递减的时间小于10，则重置时间，并停止显示游戏胜利界面
             self.step = 4000
             self.is_win = False
             self.is_show_win = True
+        elif self.step < 1500:
+            # 通过判断不断递减的时间小于1500，则画出关数
+            self.screen.blit(self.images.checkpoint[self.checkpoint][0], (430, 237))
+            self.step -= 10
         else:
+            # 时间大于1500，画出胜利画面
             win_rect = self.images.win.get_rect()
             win_rect.center = self.width / 2, self.height / 2
             self.screen.blit(self.images.win, win_rect)
@@ -246,7 +271,6 @@ class TankGame(object):
             for event in pygame.event.get():
                 if event.type == QUIT:
                     self.quit()
-
 
                     #手柄
                 if event.type == pygame.JOYBUTTONDOWN:
@@ -286,8 +310,6 @@ class TankGame(object):
                         elif -0.7 < event.value < 0.7:
                             self.dx = 0
 
-
-
                 elif event.type == KEYUP:
                     key_up_event = event
                 elif event.type == KEYDOWN:
@@ -316,13 +338,16 @@ class TankGame(object):
             if self.is_show_checkpoint:
                 self.show_checkpoint(mouse_event)
 
+            if self.is_show_choose_player_num:
+                self.show_choose_player_num(mouse_event)
+
             if self.player1_num == 0 and self.player2_num == 0:
                 self.is_over = True
 
             if self.enemy_num + len(self.tanks) -2 <= 0 and self.player1_num + self.player2_num > 0:
                 if self.checkpoint < len(self.map_data) -1:
                     self.checkpoint += 1
-                    self.step_reward = 6000
+                    self.step_reward = 500
                 else:
                     self.checkpoint = 0
                     self.difficult += 2
@@ -333,20 +358,31 @@ class TankGame(object):
                 self.win()
 
             if self.is_run and not self.is_show_menu:
+                self.is_show_checkpoint = False
+                self.is_show_choose_player_num = False
                 reward_temp = Reward(self)
                 collide_list1 = pygame.sprite.spritecollide(reward_temp,self.walls,False,pygame.sprite.collide_mask)
                 collide_list2 = pygame.sprite.spritecollide(reward_temp,self.rewards,False,pygame.sprite.collide_mask)
                 if not collide_list1 and not collide_list2:
                     if self.step_reward < 0:
                         self.rewards.add(reward_temp)
-                        self.step_reward = 6000
+                        #print("a")
+                        self.step_reward = 500
                         if self.is_mixer:
                             self.music.new_reward.play()
+                    elif self.kill % 10 == 0:
+                        self.rewards.add(reward_temp)
+                        #print("b")
+                        if self.is_mixer:
+                            self.music.new_reward.play()
+                        self.kill = 1
                 else:
                     self.step_reward -= 1
 
             if self.select_rect is not None:
                 pygame.draw.rect(self.screen,(255,255,255),self.select_rect, 1)
+
+            self.creat_player_tank()
 
             self.create_enemy_tank()
 

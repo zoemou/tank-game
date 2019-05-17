@@ -7,6 +7,7 @@ class Img(object):
         self.background = self.load('background') # 背景
         self.menu_background = self.load('menu_background') # 菜单背景
         self.checkpoint_background = self.load('checkpoint') #关卡
+        self.player_num_background = self.load('choose_player_background')
         self.super = self.load('super')
         self.blank = self.load('blank')
         self.num = self.load('num')
@@ -99,6 +100,15 @@ class Img(object):
                 self.load('checkpoint6'),
                 self.load('checkpoint6_hover')
             ],
+        ]
+        self.choose_player_num = [
+        [
+        self.load('1player'),
+        self.load('1player_hover')
+        ],[
+        self.load('2player'),
+        self.load('2player_hover')
+        ],
         ]
         self.reward = [  # 随机物品
             self.load('health_kit'),

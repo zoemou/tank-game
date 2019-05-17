@@ -24,7 +24,7 @@ class Map(object):
         if event.type == KEYDOWN:
             if event.key == K_1:
                 self.wall_type = 0
-            elif event.type ==K_2:
+            elif event.key ==K_2:
                 self.wall_type = 1
             elif event.key == K_3:
                 self.wall_type = 2

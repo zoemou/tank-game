@@ -33,8 +33,7 @@ class Menu(pygame.sprite.Sprite):
     def mouse(self, event):
         if self.unlock and self.rect.collidepoint(event.pos) and event.button is 1:
             if self.type is 0:
-                self.tg.is_show_menu = False
-                self.tg.is_run = True
+                self.tg.is_show_choose_player_num = not self.tg.is_show_choose_player_num
             elif self.type is 1:
                 self.tg.is_show_menu = False
             elif self.type is 2:
@@ -76,3 +75,35 @@ class Checkpoint(pygame.sprite.Sprite):
             self.tg.is_show_checkpoint =False
             self.tg.is_show_menu = False
             self.tg.is_edit_map = True
+
+class Choose_player_num(pygame.sprite.Sprite):
+
+    def __init__(self, type, x, y, tg):
+        pygame.sprite.Sprite.__init__(self)
+        self.tg, self.type = tg, type
+        self.images = self.tg.images.choose_player_num
+        self.image = self.images[self.type][0]
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = x, y
+
+    def update(self, event=None):
+        if self.rect.collidepoint(pygame.mouse.get_pos()):
+            self.image = self.images[self.type][1]
+        else:
+            self.image = self.images[self.type][0]
+        if event is not None:
+            self.mouse(event)
+
+    def mouse(self, event):
+        if self.tg.is_show_choose_player_num and self.rect.collidepoint(event.pos) and event.button is 1:
+            self.tg.is_show_choose_player_num = False
+            self.tg.choose_player_num = self.type
+            if self.tg.choose_player_num == 0:
+                self.tg.is_show_menu = False
+                self.tg.is_run = True
+                self.tg.player2_num = 0
+                self.tg.player_num = 1
+            if self.tg.choose_player_num == 1:
+                self.tg.is_show_menu = False
+                self.tg.is_run = True
+                self.tg.player_num = 2
